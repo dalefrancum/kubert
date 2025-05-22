@@ -8,6 +8,14 @@ Coming soon. No, really.
 
 ## Example usage
 
+```shell
 kubert dev
-kubert staging
+```
 
+```shell
+kubert staging
+```
+
+## Tips
+
+Use with iTerm profiles (or another terminal) to make opening new K8s tab even easier.
