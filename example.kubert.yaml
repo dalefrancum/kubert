@@ -1,0 +1,44 @@
+# Edit this example file and copy to ~/.config/kubert.yaml
+
+defaults:
+  short_region: ue1
+  region: us-east-1
+
+contexts:
+
+  # kOps
+  kops-staging:
+    environment: staging
+    aws_profile: my-company-gbl-staging-admin
+    cluster: us-east-1.staging.my-company.com
+  kops-prod:
+    environment: prod
+    cluster: us-east-1.prod.my-company.com
+
+
+  # EKS
+  scratch:
+    environment: scratch
+  ue2-scratch:
+    environment: scratch
+    short_region: ue2
+    region: us-east-2
+  dev:
+    environment: dev
+  prod:
+    environment: prod
+  staging:
+    environment: staging
+  uw2-staging:
+    environment: staging
+    short_region: uw2
+    region: us-west-2
+  uw2-prod:
+    environment: prod
+    short_region: uw2
+    region: us-west-2
+  other-nonprod:
+    environment: other-nonprod
+    short_region: uw2
+    region: us-west-2
+    cluster: other-cluster
