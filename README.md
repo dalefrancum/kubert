@@ -16,6 +16,11 @@ kubert dev
 kubert staging
 ```
 
+## Dependencies
+
+- crudini
+- fzf
+
 ## Tips
 
 Use with iTerm profiles (or another terminal) to make opening new K8s tab even easier.
