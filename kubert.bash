@@ -19,6 +19,10 @@ function kubeswitch () {
   KUBECONFIG_FILE=~/.kube/$CONTEXT.config.yaml
   if [[ ! -f $KUBECONFIG_FILE ]] ; then
     echo "$KUBECONFIG_FILE not found. Creating it."
+    if [[ ! -d ~/.kube ]] ; then
+      echo "~/.kube directory not found. Creating it."
+      mkdir ~/.kube
+    fi
     touch "$KUBECONFIG_FILE"
     chmod 600 "$KUBECONFIG_FILE"
   fi
