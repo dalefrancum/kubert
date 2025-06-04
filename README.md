@@ -20,6 +20,7 @@ kubert staging
 
 - crudini
 - fzf
+- kops (if you want to connect to kops clusters)
 
 ## Tips
 
