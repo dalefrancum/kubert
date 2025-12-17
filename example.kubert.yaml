@@ -9,11 +9,11 @@ contexts:
   # kOps
   kops-staging:
     environment: staging
-    aws_profile: my-company-gbl-staging-admin
-    cluster: us-east-1.staging.my-company.com
+    aws_profile: myaws-gbl-staging-poweruser
+    cluster: us-east-1.staging.myaws.com
   kops-prod:
     environment: prod
-    cluster: us-east-1.prod.my-company.com
+    cluster: us-east-1.prod.myaws.com
 
 
   # EKS
