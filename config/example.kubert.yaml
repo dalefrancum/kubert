@@ -1,0 +1,13 @@
+# Edit this example file and copy to ~/.config/kubert.yaml
+
+defaults:
+  region: us-east-1
+
+contexts:
+  dev:
+    cluster: my-dev-cluster
+    aws_profile: dev-admin
+  prod:
+    cluster: my-prod-cluster
+    region: us-east-2
+    aws_profile: prod-admin
