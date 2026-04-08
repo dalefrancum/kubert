@@ -9,7 +9,7 @@ fi
 # box will appear.
 ################################################################################
 function kubert_context_prompt() {
-  CONTEXT=$(yq '.contexts | keys | .[]' ~/.config/kubert.yaml | sort | fzf --height 50% --reverse --select-1 --prompt='-> ' --tiebreak='begin,index' --header 'Select Kubernetes context')
+  CONTEXT=$(yq '.contexts | keys | .[]' "$KUBERT_CONFIG_FILE" | sort | fzf --height 50% --reverse --select-1 --prompt='-> ' --tiebreak='begin,index' --header 'Select Kubernetes context')
   echo "$CONTEXT"
 }
 

@@ -1,207 +1,129 @@
 # kubert
 
-Simple tool to manage multiple Kubernetes contexts simultaneously in separate terminal windows/tabs.
-
-Kubert allows you to run different kubectl contexts in different terminal tabs/windows by automatically setting `KUBECONFIG` to separate kubeconfig files. Each context gets its own isolated configuration file, preventing context-switching conflicts when working with multiple clusters.
+Shell function for managing multiple AWS EKS Kubernetes contexts in separate terminal windows. Each terminal gets its own `KUBECONFIG` file, so switching contexts in one window never interferes with another.
 
 ## Prerequisites
 
-- `yq` - YAML parser/processor
-- `crudini` - INI file manipulation tool
-- `fzf` - Fuzzy finder for context selection
-- `aws` CLI - For AWS EKS clusters
-- `kops` - Only if connecting to kOps-managed clusters
-- Bash shell
+- [AWS CLI](https://aws.amazon.com/cli/) with profiles configured (see [AWS Profiles](#aws-profiles) below)
+- [yq](https://github.com/mikefarah/yq) - YAML processor
+- [fzf](https://github.com/junegunn/fzf) - fuzzy finder for interactive context selection
+- `kubectl`
 
 ## Installation
 
-1. Clone this repository or download the scripts
-2. Source the `kubert.bash` script in your shell profile (e.g., `~/.bashrc`, `~/.zshrc`):
+1. Create the config directory:
    ```bash
-   source /path/to/kubert.bash
+   mkdir -p ~/.config/kubert
    ```
-3. Create your kubert configuration file at `~/.config/kubert.yaml` (see Configuration section below)
-4. Set up your AWS config with the necessary profiles (see AWS Configuration section below)
+
+2. Copy the shell function and example config:
+   ```bash
+   cp src/kubert.bash ~/.config/kubert/
+   cp config/example.kubert.yaml ~/.config/kubert/kubert.yaml
+   ```
+
+3. Edit `~/.config/kubert/kubert.yaml` with your clusters and AWS profiles.
+
+4. Source `kubert.bash` in your shell profile (`~/.zshrc` or `~/.bashrc`):
+   ```bash
+   source ~/.config/kubert/kubert.bash
+   ```
+
+5. Restart your shell or `source` your profile.
 
 ## Configuration
 
-### Kubert Config File
-
-Create a configuration file at `~/.config/kubert.yaml`. See [example.kubert.yaml](example.kubert.yaml) for a complete example.
+Edit `~/.config/kubert/kubert.yaml`:
 
 ```yaml
 defaults:
-  short_region: ue1
   region: us-east-1
 
 contexts:
-  # EKS Clusters
   dev:
-    environment: dev
-    aws_profile: myaws-gbl-dev-poweruser
-
-  staging:
-    environment: staging
-    aws_profile: myaws-gbl-staging-poweruser
-
+    cluster: my-dev-cluster
+    aws_profile: dev-admin
   prod:
-    environment: prod
-    aws_profile: myaws-gbl-prod-poweruser
-
-  # Multi-region example
-  uw2-prod:
-    environment: prod
-    aws_profile: myaws-gbl-prod-poweruser
-    short_region: uw2
-    region: us-west-2
-
-  # Custom cluster name
-  custom:
-    environment: nonprod
-    aws_profile: myaws-gbl-nonprod-poweruser
-    cluster: my-custom-cluster-name
-
-  # kOps Clusters
-  kops-staging:
-    environment: staging
-    aws_profile: myaws-gbl-staging-poweruser
-    cluster: us-east-1.staging.mycompany.com
+    cluster: my-prod-cluster
+    region: us-east-2
+    aws_profile: prod-admin
 ```
 
-#### Configuration Options
+Each context requires:
+- `cluster` - the EKS cluster name
+- `aws_profile` - an AWS CLI profile name from `~/.aws/config`
 
-- **defaults**: Default values used when not specified in a context
-  - `short_region`: Short region code (e.g., `ue1` for us-east-1)
-  - `region`: AWS region (e.g., `us-east-1`)
+Optional:
+- `region` - overrides the default region for this context
 
-- **contexts**: Named contexts for your clusters
-  - `environment`: The environment name (used in cluster naming convention)
-  - `aws_profile`: AWS CLI profile to use for authentication (optional)
-  - `short_region`: Override default short region code (optional)
-  - `region`: Override default AWS region (optional)
-  - `cluster`: Override default cluster name (optional)
+The config file path defaults to `~/.config/kubert.yaml`. Override it by setting `KUBERT_CONFIG_FILE` before sourcing kubert.bash.
 
-### AWS Configuration
+## AWS Profiles
 
-Set up AWS CLI profiles in `~/.aws/config` that correspond to the `aws_profile` values in your kubert config.
+Kubert depends on having AWS CLI profiles already configured in `~/.aws/config`. Each `aws_profile` value in your kubert config must correspond to a working profile. Kubert does not handle AWS authentication itself — it passes the profile to `aws eks update-kubeconfig`.
 
-Example AWS config profiles:
+Example using AWS SSO:
 
 ```ini
-[profile myaws-gbl-identity-poweruser]
-region = us-east-1
-# This is your base identity profile with credentials
+[sso-session my-org]
+sso_start_url = https://my-org.awsapps.com/start
+sso_region = us-east-1
 
-[profile myaws-gbl-security-prod-poweruser]
+[profile dev-admin]
+sso_session = my-org
+sso_account_id = 123456789012
+sso_role_name = AdministratorAccess
 region = us-east-1
-source_profile = myaws-gbl-identity-poweruser
-role_arn = arn:aws:iam::123456789012:role/myaws-gbl-security-prod-poweruser
 
-[profile myaws-gbl-dev-poweruser]
+[profile prod-admin]
+sso_session = my-org
+sso_account_id = 987654321098
+sso_role_name = AdministratorAccess
 region = us-east-1
-source_profile = myaws-gbl-identity-poweruser
-role_arn = arn:aws:iam::234567890123:role/myaws-gbl-dev-poweruser
+```
 
-[profile myaws-gbl-staging-poweruser]
-region = us-east-1
-source_profile = myaws-gbl-identity-poweruser
-role_arn = arn:aws:iam::345678901234:role/myaws-gbl-staging-poweruser
+Example using IAM role assumption:
 
-[profile myaws-gbl-prod-poweruser]
+```ini
+[profile identity]
 region = us-east-1
-source_profile = myaws-gbl-identity-poweruser
-role_arn = arn:aws:iam::456789012345:role/myaws-gbl-prod-poweruser
 
-[profile myaws-gbl-nonprod-poweruser]
+[profile dev-admin]
+source_profile = identity
+role_arn = arn:aws:iam::123456789012:role/dev-admin
 region = us-east-1
-source_profile = myaws-gbl-identity-poweruser
-role_arn = arn:aws:iam::567890123456:role/myaws-gbl-nonprod-poweruser
 ```
 
 ## Usage
 
-### Basic Usage
+Switch to a context:
 
-Run kubert with a context name:
-
-```shell
+```bash
 kubert dev
 ```
 
-This will:
-1. Set `KUBECONFIG` to `~/.kube/dev.config.yaml` (creating it if needed)
-2. Run `aws eks update-kubeconfig` to configure kubectl for the cluster
-3. Set the appropriate AWS profile and region
+This sets `KUBECONFIG` to `~/.kube/dev.config.yaml`, then runs `aws eks update-kubeconfig` with the cluster, region, and profile from your config.
 
-Example output:
-```
-$KUBECONFIG is now /Users/username/.kube/dev.config.yaml
-aws eks update-kubeconfig --name="myaws-ue1-dev-eks-cluster" --region="us-east-1" --profile="myaws-gbl-dev-poweruser"
-Updated context arn:aws:eks:us-east-1:234567890123:cluster/myaws-ue1-dev-eks-cluster in /Users/username/.kube/dev.config.yaml
-```
+Run without arguments for interactive selection via fzf:
 
-### Interactive Context Selection
-
-Run `kubert` without arguments to get an interactive fuzzy-finder menu:
-
-```shell
+```bash
 kubert
 ```
 
-Use arrow keys or type to filter contexts, then press Enter to select.
+### Multiple terminals
 
-### Multiple Terminal Windows/Tabs
-
-The power of kubert is that each terminal window/tab maintains its own `KUBECONFIG`:
-
-```shell
+```bash
 # Terminal 1
 kubert dev
-kubectl get pods  # Shows dev cluster pods
+kubectl get pods    # dev cluster
 
 # Terminal 2
 kubert prod
-kubectl get pods  # Shows prod cluster pods
-
-# Terminal 3
-kubert staging
-kubectl get pods  # Shows staging cluster pods
+kubectl get pods    # prod cluster
 ```
 
-Each terminal maintains its own isolated kubectl context without interfering with the others.
-
-## How It Works
-
-Kubert creates separate kubeconfig files for each context in `~/.kube/`. When you run `kubert <context>`:
-
-1. Reads the context configuration from `~/.config/kubert.yaml`
-2. Sets `KUBECONFIG` environment variable to `~/.kube/<context>.config.yaml`
-3. For EKS clusters: Runs `aws eks update-kubeconfig` with the appropriate parameters
-4. For kOps clusters: Uses `kops export kubecfg` to configure kubectl
-
-Each terminal session has its own `KUBECONFIG`, so switching contexts in one terminal doesn't affect others.
-
-## Tips
-
-- **iTerm2 Integration**: Create iTerm2 profiles that automatically run `kubert <context>` on launch for one-click cluster access
-- **Tab Naming**: Consider using terminal tab naming to identify which cluster you're connected to
-- **Shell Prompt**: Integrate your current context into your shell prompt for visual confirmation
-- **Aliases**: Create shell aliases for frequently used contexts:
-  ```bash
-  alias kubert-dev='kubert dev'
-  alias kubert-staging='kubert staging'
-  alias kubert-prod='kubert prod'
-  ```
-
-## Troubleshooting
-
-**Context not found**: Ensure the context name exists in your `~/.config/kubert.yaml`
-
-**AWS authentication errors**: Verify your AWS profiles are correctly configured in `~/.aws/config` and you have valid credentials
-
-**kubectl not connecting**: Check that your AWS profile has the necessary EKS permissions and that the cluster name matches your naming convention
+Each terminal maintains its own isolated context.
 
 ## License
 
-See [LICENSE](LICENSE) file for details.
-
+See [LICENSE](LICENSE).
