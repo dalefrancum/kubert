@@ -56,7 +56,7 @@ Each context requires:
 Optional:
 - `region` - overrides the default region for this context
 
-The config file path defaults to `~/.config/kubert.yaml`. Override it by setting `KUBERT_CONFIG_FILE` before sourcing kubert.bash.
+The config file path defaults to `~/.config/kubert/kubert.yaml`. Override it by setting `KUBERT_CONFIG_FILE` before sourcing kubert.bash.
 
 ## AWS Profiles
 

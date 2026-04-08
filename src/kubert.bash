@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [[ -z "$KUBERT_CONFIG_FILE" ]]; then
-  KUBERT_CONFIG_FILE="${HOME}/.config/kubert.yaml"
+  KUBERT_CONFIG_FILE="${HOME}/.config/kubert/kubert.yaml"
 fi
 
 ################################################################################
